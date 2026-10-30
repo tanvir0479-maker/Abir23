@@ -26,9 +26,9 @@ module.exports = async function ({ api, threadModel, userModel, dashBoardModel, 
 				continue;
 			sendMail({
 				to: mail,
-				subject: "Report error when listen message in Goat Bot",
+				subject: "Report error when listen message in Aliya Bot",
 				text: "",
-				html: `<h2>Has error when listen message in Goat Bot id: ${botID}</h2><div><pre style="background:#272822;position: relative;padding: 1em 0 1em 1em;"><code style="color:#272822;background:#272822;text-shadow:0 1px rgba(0,0,0,.3);font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace;font-size:1em;text-align:left;">${highlightCode}</code></pre></div>`
+				html: `<h2>Has error when listen message in Aliya Bot id: ${botID}</h2><div><pre style="background:#272822;position: relative;padding: 1em 0 1em 1em;"><code style="color:#272822;background:#272822;text-shadow:0 1px rgba(0,0,0,.3);font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace;font-size:1em;text-align:left;">${highlightCode}</code></pre></div>`
 			})
 				.then(data => {
 					// CUSTOM YOUR CODE HERE
@@ -51,7 +51,7 @@ module.exports = async function ({ api, threadModel, userModel, dashBoardModel, 
 			if (!ADMIN_ID_TELEGRAM)
 				continue;
 			const MAX_LENGTH_TELEGRAM_MESSAGE = 4096; // 4096 is max length of message in telegram
-			const message = `Has error when listen message in Goat Bot id: ${botID}:\n`;
+			const message = `Has error when listen message in Aliya Bot id: ${botID}:\n`;
 			let messageError = `\`\`\`json\n${highlightCode}\n\`\`\``;
 
 			if (message.length + messageError.length > MAX_LENGTH_TELEGRAM_MESSAGE) {
@@ -74,7 +74,7 @@ module.exports = async function ({ api, threadModel, userModel, dashBoardModel, 
 	/* ___ Example send a message to WEBHOOK DISCORD when bot has error ___ */
 	if (configNotiWhenListenMqttError.discordHook?.enable == true) {
 		let highlightCode = error;
-		const content = `**Has error when listen message in Goat Bot id: ${botID}:**\n\`\`\`json\n{highlightCode}\n\`\`\``;
+		const content = `**Has error when listen message in Aliya Bot id: ${botID}:**\n\`\`\`json\n{highlightCode}\n\`\`\``;
 		const contentLength = content.replace("{highlightCode}").length;
 		if (typeof error == "object" && !error.stack)
 			highlightCode = JSON.stringify(error, null, 2);

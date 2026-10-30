@@ -198,7 +198,7 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 				// ———————————————— CHECK ONANYEVENT ———————————————— //
 				if (onAnyEvent)
 					GoatBot.onAnyEvent.push(commandName);
-				// —————————————— IMPORT TO GLOBALGOAT —————————————— //
+				// —————————————— IMPORT TO GLOBAL —————————————— //
 				GoatBot[setMap].set(commandName.toLowerCase(), command);
 				commandLoadSuccess++;
 				// ————————————————— COMPARE COMMAND (removed in open source) ————————————————— //
