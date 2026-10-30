@@ -25,13 +25,13 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "61593801485340"
+    "61584165706216"
   ],
   "developer": [
     "61593801485340"
   ],
   "vipuser": [
-    "61593801485340"
+    "61584165706216"
   ],
   "author": "Mr.king",
   "reactBy": {
@@ -44,7 +44,7 @@
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
   "nickNameBot": "Aliya Official",
-  "prefix": "(",
+  "prefix": "!",
   "database": {
     "type": "sqlite",
     "uriMongodb": "", 
