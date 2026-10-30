@@ -4,7 +4,7 @@
 	"description": "Aliya Official V4 Messenger bot, maintained by Mr.king.",
 	"main": "index.js",
 	"engines": {
-		"node": "20.x",
+		"node": ">=22.0.0",
 		"npm": ">=7.0.0"
 	},
 	"dependencies": {
@@ -34,6 +34,27 @@
 		"jsonlint-mod": "^1.7.6",
 		"leven": "^3.1.0",
 		"moment-timezone": "^0.5.34",
+		"mongoose": "^6.3.1",
+		"mqtt": "^4.3.7",
+		"node-cron": "^3.0.2",
+		"nodemailer": "^6.7.5",
+		"npmlog": "^7.0.1",
+		"ora": "^5.4.1",
+		"passport": "^0.6.0",
+		"passport-local": "^1.0.0",
+		"qrcode-reader": "^1.0.4",
+		"qs": "^6.11.0",
+		"request": "^2.88.2",
+		"searchitunes": "^2.5.4",
+		"sequelize": "^6.19.0",
+		"sharp": "^0.35.4",
+		"socket.io": "^4.5.1",
+		"sqlite3": "^5.1.7",
+		"tinyurl": "^1.1.7",
+		"totp-generator": "^0.0.13",
+		"websocket-stream": "^5.5.2",
+		"ws3-fca": "^3.5.2"
+	},
 	"scripts": {
 		"start": "node index.js",
 		"dev": "node index.js",
@@ -68,5 +89,4 @@
 		"prompt-checkbox": "^2.2.0",
 		"terser": "^5.15.0"
 	}
-	}
-	
+}
