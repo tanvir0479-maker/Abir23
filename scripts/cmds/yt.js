@@ -2,11 +2,24 @@ const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
 
+const SEARCH_URL = "https://azadx69x.is-a.dev/api/youtube-search";
+const AUTODL_URL = "https://xsaim8x-xxx-api.onrender.com/api/auto";
+const MAX_SIZE = 25 * 1024 * 1024; // Messenger attachment limit
+const HTTP = { timeout: 30000, headers: { "User-Agent": "Mozilla/5.0" } };
+const SIGNATURE = `╭───────────────⬣\n│ 𝐌𝐚𝐝𝐞 𝐰𝐢𝐭𝐡 🤍 𝐛𝐲 --𝔐𝔯.𝔎𝔦𝔫𝔤\n╰───────────────⬣`;
+
+const react = (api, event, emoji) => {
+  try {
+    if (api && typeof api.setMessageReaction === "function") api.setMessageReaction(emoji, event.messageID, () => {}, true);
+  } catch (e) {}
+};
+const why = err => err?.response ? `HTTP ${err.response.status}` : (err?.code === "ECONNABORTED" ? "timeout" : (err?.code || err?.message || "unknown"));
+
 module.exports = {
   config: {
     name: "yt",
     aliases: ["yts", "youtubesearch", "ytsearch"],
-    version: "2.1.0",
+    version: "2.2.0",
     author: "𝔐𝔯.𝔎𝔦𝔫𝔤",
     countDown: 3,
     role: 0,
@@ -20,25 +33,18 @@ module.exports = {
       const query = args.join(" ");
       if (!query) return message.reply("⚠️ Please provide a search query! Example: `/yt Phonk`");
 
-      if (api && typeof api.setMessageReaction === "function") {
-        api.setMessageReaction("⌛️", event.messageID, () => {}, true);
-      }
+      react(api, event, "⌛️");
 
-      const encodedQuery = encodeURIComponent(query);
-      const res = await axios.get(`https://azadx69x.is-a.dev/api/youtube-search?query=${encodedQuery}&type=Bazil`);
-      const resData = res?.data;
+      const res = await axios.get(`${SEARCH_URL}?query=${encodeURIComponent(query)}&type=Bazil`, HTTP);
+      const results = res?.data?.data?.results;
 
-      const results = resData?.data?.results;
-      if (!results || results.length === 0) {
-        if (api && typeof api.setMessageReaction === "function") {
-          api.setMessageReaction("❌️", event.messageID, () => {}, true);
-        }
+      if (!Array.isArray(results) || results.length === 0) {
+        console.error("[yt] no results:", JSON.stringify(res?.data)?.slice(0, 300));
+        react(api, event, "❌️");
         return message.reply("❌ No results found on YouTube!");
       }
 
-      if (api && typeof api.setMessageReaction === "function") {
-        api.setMessageReaction("✅️", event.messageID, () => {}, true);
-      }
+      react(api, event, "✅️");
 
       let msg = `📺 𝐘𝐎𝐔𝐓𝐔𝐁𝐄 𝐒𝐄𝐀𝐑𝐂𝐇 𝐑𝐄𝐒𝐔𝐋𝐓𝐒 🌸\n` +
                 `📌 𝐐𝐮𝐞𝐫𝐲: ${query}\n\n`;
@@ -51,13 +57,13 @@ module.exports = {
                `📌 Channel: ${item.channel}\n───────────────────\n`;
       });
 
-      const signature = `╭───────────────⬣\n│ 𝐌𝐚𝐝𝐞 𝐰𝐢𝐭𝐡 🤍 𝐛𝐲 --𝔐𝔯.𝔎𝔦𝔫𝔤\n╰───────────────⬣`;
-      msg += `\n💬 Reply with format:\n👉 video <number> (e.g. video 1)\n👉 audio <number> (e.g. audio 1)\n\n${signature}`;
+      msg += `\n💬 Reply with format:\n👉 video <number> (e.g. video 1)\n👉 audio <number> (e.g. audio 1)\n\n${SIGNATURE}`;
 
       return message.reply(msg, (err, info) => {
-        if (err) return;
+        if (err || !info) return;
         global.GoatBot.onReply.set(info.messageID, {
-          commandName: this.config.name,
+          // literal name on purpose: `this` is undefined when the loader calls onStart detached
+          commandName: "yt",
           messageID: info.messageID,
           author: event.senderID,
           results: listItems
@@ -65,19 +71,24 @@ module.exports = {
       });
 
     } catch (err) {
-      if (api && typeof api.setMessageReaction === "function") {
-        api.setMessageReaction("❌️", event.messageID, () => {}, true);
-      }
-      return message.reply("❌ Error occurred while searching YouTube, please try again!");
+      console.error("[yt] search failed:", why(err), err?.message);
+      react(api, event, "❌️");
+      return message.reply(`❌ Error occurred while searching YouTube, please try again! (${why(err)})`);
     }
   },
 
-  onReply: async function ({ message, event, api, reply }) {
+  // GoatBot passes the stored data as `Reply` (capital R). Older code used `reply`; accept both.
+  onReply: async function ({ message, event, api, Reply, reply }) {
+    let filePath;
     try {
-      const { author, results } = reply;
+      const data = Reply || reply;
+      if (!data || !Array.isArray(data.results)) {
+        return message.reply("⚠️ Ei search result ta expire hoye geche, abar /yt dao!");
+      }
+      const { author, results } = data;
       if (event.senderID !== author) return message.reply("⚠️ You cannot use this search result!");
 
-      const args = event.body.trim().split(" ");
+      const args = String(event.body || "").trim().split(/\s+/);
       const action = args[0]?.toLowerCase();
       const index = parseInt(args[1]) - 1;
 
@@ -88,54 +99,61 @@ module.exports = {
       const selectedItem = results[index];
       let downloadUrl = action === "video" ? selectedItem.download_video : selectedItem.download_audio;
 
-      if (api && typeof api.setMessageReaction === "function") {
-        api.setMessageReaction("⌛️", event.messageID, () => {}, true);
-      }
+      react(api, event, "⌛️");
 
-      global.GoatBot.onReply.delete(reply.messageID);
+      if (data.messageID) global.GoatBot.onReply.delete(data.messageID);
 
-      // Autodl API Fallback integration if primary download url fails or missing
+      // Autodl API fallback if the primary download url is missing
       if (!downloadUrl && selectedItem.url) {
         try {
-          const autoRes = await axios.get(`https://xsaim8x-xxx-api.onrender.com/api/auto?url=${encodeURIComponent(selectedItem.url)}`);
+          const autoRes = await axios.get(`${AUTODL_URL}?url=${encodeURIComponent(selectedItem.url)}`, { ...HTTP, timeout: 60000 });
           if (autoRes.data) {
-            downloadUrl = action === "video" ? (autoRes.data.high_quality || autoRes.data.low_quality) : autoRes.data.audio || autoRes.data.high_quality;
+            downloadUrl = action === "video"
+              ? (autoRes.data.high_quality || autoRes.data.low_quality)
+              : (autoRes.data.audio || autoRes.data.high_quality);
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error("[yt] autodl fallback failed:", why(e));
+        }
       }
 
       if (!downloadUrl) {
-        if (api && typeof api.setMessageReaction === "function") {
-          api.setMessageReaction("❌️", event.messageID, () => {}, true);
-        }
+        react(api, event, "❌️");
         return message.reply("❌ Download link not found for this file!");
       }
 
-      const buffer = (await axios.get(downloadUrl, { responseType: "arraybuffer" })).data;
+      const buffer = (await axios.get(downloadUrl, {
+        ...HTTP,
+        timeout: 180000,
+        responseType: "arraybuffer",
+        maxContentLength: MAX_SIZE,
+        maxBodyLength: MAX_SIZE
+      })).data;
+
       const extension = action === "video" ? "mp4" : "mp3";
-      const filePath = path.join(__dirname, "cache", `yt_${Date.now()}.${extension}`);
+      filePath = path.join(__dirname, "cache", `yt_${Date.now()}.${extension}`);
       await fs.ensureDir(path.dirname(filePath));
-      fs.writeFileSync(filePath, Buffer.from(buffer));
+      await fs.writeFile(filePath, Buffer.from(buffer));
 
-      if (api && typeof api.setMessageReaction === "function") {
-        api.setMessageReaction("✅️", event.messageID, () => {}, true);
-      }
+      react(api, event, "✅️");
 
-      const signature = `╭───────────────⬣\n│ 𝐌𝐚𝐝𝐞 𝐰𝐢𝐭𝐡 🤍 𝐛𝐲 --𝔐𝔯.𝔎𝔦𝔫𝔤\n╰───────────────⬣`;
       const caption = `📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 (${action.toUpperCase()}) 🌸\n` +
-                      `📌 𝐓𝐢𝐭𝐥𝐞: ${selectedItem.title}\n\n${signature}`;
+                      `📌 𝐓𝐢𝐭𝐥𝐞: ${selectedItem.title}\n\n${SIGNATURE}`;
 
+      const file = filePath;
       return message.reply({
         body: caption,
-        attachment: fs.createReadStream(filePath)
-      }, () => fs.unlinkSync(filePath));
+        attachment: fs.createReadStream(file)
+      }, () => fs.remove(file).catch(() => {}));
 
     } catch (err) {
-      if (api && typeof api.setMessageReaction === "function") {
-        api.setMessageReaction("❌️", event.messageID, () => {}, true);
-      }
-      return message.reply("❌ Failed to download and send the file!");
+      console.error("[yt] download failed:", why(err), err?.message);
+      if (filePath) fs.remove(filePath).catch(() => {});
+      react(api, event, "❌️");
+      const tooBig = /maxContentLength|max content length/i.test(err?.message || "");
+      return message.reply(tooBig
+        ? "❌ File ta onek boro (25MB er beshi). Audio ba chhoto video try koro!"
+        : `❌ Failed to download and send the file! (${why(err)})`);
     }
   }
 };
-      

@@ -23,13 +23,13 @@ const textMessage =
 🔗 https://github.com/mrking-svg/Aliya-Official-V4-personal.git
 🦢 𝗛𝗼𝘄 𝘁𝗼 𝗨𝘀𝗲 (𝗚𝗶𝘁 𝗖𝗹𝗼𝗻𝗲 & 𝗦𝗲𝘁𝘂𝗽) :
 𝟭. Termux ba terminal-e giye niche command dao:
-`git clone https://github.com/mrking-svg/Aliya-Official-V4-personal.git`
+\`git clone https://github.com/mrking-svg/Aliya-Official-V4-personal.git\`
 𝟮. Folder-e entry karo:
-`cd Aliya-Official-V4-personal`
+\`cd Aliya-Official-V4-personal\`
 𝟯. Dependencies install karo:
-`npm install`
+\`npm install\`
 𝟰. Bot start karo:
-`node index.js`
+\`node index.js\`
 ✧─────── ͟͟͞͞𝗔𝗹𝗶𝘆𝗮 𝗕𝗼𝘁 𝗦𝘆𝘀𝘁𝗲𝗺 ───────✧`;
 try {
 const imageStream = (await axios.get(imageUrl, { responseType: "stream" })).data;

@@ -1,7 +1,7 @@
 module.exports = {
   config: {
     name: "boxlist",
-    aliases: ["gclist],
+    aliases: ["gclist"],
     version: "2.0.0",
     author: "𝔐𝔯.𝔎𝔦𝔫𝔤",
     countDown: 5,
@@ -32,8 +32,21 @@ module.exports = {
         }
 
         const targetGC = list[index - 1];
-        await api.removeUserFromGroup(api.getCurrentUserID(), targetGC.threadID);
-        return api.sendMessage(`✅ Sothikvabe GC theke leave niya hoyeche: ${targetGC.name || "Unnamed GC"}`, event.threadID, event.messageID);
+        const doneMsg = `✅ Sothikvabe GC theke leave niya hoyeche: ${targetGC.name || "Unnamed GC"}`;
+
+        // If the bot leaves the very GC the command was sent in, it can't reply afterwards
+        if (String(targetGC.threadID) === String(event.threadID)) {
+          await api.sendMessage(doneMsg, event.threadID);
+        }
+
+        // removeUserFromGroup is callback-based in most FCA builds; awaiting it directly never waits/catches errors
+        await new Promise((resolve, reject) => {
+          const r = api.removeUserFromGroup(api.getCurrentUserID(), targetGC.threadID, err => (err ? reject(err) : resolve()));
+          if (r && typeof r.then === "function") r.then(resolve, reject);
+        });
+
+        if (String(targetGC.threadID) === String(event.threadID)) return;
+        return api.sendMessage(doneMsg, event.threadID, event.messageID);
       }
 
       let msg = "🌸 𝐀𝐋𝐈𝐘𝐀 𝐀𝐂𝐓𝐈𝐕𝐄 𝐆𝐂 𝐋𝐈𝐒𝐓 🦢\n\n";
@@ -49,4 +62,3 @@ module.exports = {
     }
   }
 };
-                                
