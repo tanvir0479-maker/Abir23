@@ -65,16 +65,16 @@ function centerText(text, length) {
 // logo
 const titles = [
 	[
-		"██████╗  ██████╗  █████╗ ████████╗    ██╗   ██╗██████╗",
-		"██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝    ██║   ██║╚════██╗",
-		"██║  ███╗██║   ██║███████║   ██║       ██║   ██║ █████╔╝",
-		"██║   ██║██║   ██║██╔══██║   ██║       ╚██╗ ██╔╝██╔═══╝",
-		"╚██████╔╝╚██████╔╝██║  ██║   ██║        ╚████╔╝ ███████╗",
-		"╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝         ╚═══╝  ╚══════╝"
+		" █████╗ ██╗     ██╗██╗   ██╗ █████╗   ██╗   ██╗██╗  ██╗",
+		"██╔══██╗██║     ██║╚██╗ ██╔╝██╔══██╗  ██║   ██║██║  ██║",
+		"███████║██║     ██║ ╚████╔╝ ███████║  ██║   ██║███████║",
+		"██╔══██║██║     ██║  ╚██╔╝  ██╔══██║  ╚██╗ ██╔╝╚════██║",
+		"██║  ██║███████╗██║   ██║   ██║  ██║   ╚████╔╝      ██║",
+		"╚═╝  ╚═╝╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝    ╚═══╝       ╚═╝"
 	],
 	[
-		"█▀▀ █▀█ ▄▀█ ▀█▀  █▄▄ █▀█ ▀█▀  █░█ ▀█",
-		"█▄█ █▄█ █▀█ ░█░  █▄█ █▄█ ░█░  ▀▄▀ █▄"
+		"▄▀█ █░░ █ █▄█ ▄▀█  █░█ █░█",
+		"█▀█ █▄▄ █ ░█░ █▀█  ▀▄▀ ▀▀█"
 	],
 	[
 		"A L I Y A  V 4 @" + currentVersion
@@ -113,7 +113,7 @@ else {
 	subTitleArray.push(subTitle);
 }
 const author = ("Maintained by Mr.king");
-const srcUrl = ("Source code: https://github.com/masterjiraya890-svg/Aliya-Official--v4");
+const srcUrl = ("Source code: https://github.com/mrking-svg/Aliya-Official-V4-personal");
 const fakeRelease = ("ALL VERSIONS NOT RELEASED HERE ARE FAKE");
 for (const t of subTitleArray) {
 	const textColor2 = gradient("#9F98E8", "#AFF6CF")(t);
@@ -724,7 +724,7 @@ async function startBot(loginWithEmail) {
 			log.info("BOT ID", `${global.botID} - ${await getName(global.botID)}`);
 			log.info("PREFIX", global.GoatBot.config.prefix);
 			log.info("LANGUAGE", global.GoatBot.config.language);
-			log.info("BOT NICK NAME", global.GoatBot.config.nickNameBot || "GOAT BOT");
+			log.info("BOT NICK NAME", global.GoatBot.config.nickNameBot || "ALIYA BOT");
 			// ———————————————————— GBAN ————————————————————— //
 			let dataGban;
 
@@ -892,8 +892,7 @@ async function startBot(loginWithEmail) {
 			log.master("LOAD TIME", `${convertTime(Date.now() - global.GoatBot.startTime)}`);
 			logColor("#f5ab00", createLine("COPYRIGHT"));
 			// —————————————————— COPYRIGHT INFO —————————————————— //
-			// console.log(`\x1b[1m\x1b[33mCOPYRIGHT:\x1b[0m\x1b[1m\x1b[37m \x1b[0m\x1b[1m\x1b[36mProject GoatBot v2 created by ntkhang03 (https://github.com/ntkhang03), please do not sell this source code or claim it as your own. Thank you!\x1b[0m`);
-			console.log(`\x1b[1m\x1b[33m${("COPYRIGHT:")}\x1b[0m\x1b[1m\x1b[37m \x1b[0m\x1b[1m\x1b[36m${("Project GoatBot v2 created by ntkhang03 (https://github.com/ntkhang03), please do not sell this source code or claim it as your own. Thank you!")}\x1b[0m`);
+			console.log(`\x1b[1m\x1b[33m${("COPYRIGHT:")}\x1b[0m\x1b[1m\x1b[37m \x1b[0m\x1b[1m\x1b[36m${("Aliya Official V4 - Maintained by Mr.king | Based on the open-source GoatBot project by ntkhang03 (https://github.com/ntkhang03)")}\x1b[0m`);
 			logColor("#f5ab00", character);
 			global.GoatBot.config.adminBot = adminBot;
 			writeFileSync(global.client.dirConfig, JSON.stringify(global.GoatBot.config, null, 2));
@@ -1065,7 +1064,6 @@ async function startBot(loginWithEmail) {
 
 				const handlerAction = require("../handler/handlerAction.js")(api, threadModel, userModel, dashBoardModel, globalModel, usersData, threadsData, dashBoardData, globalData);
                                 if (hasBanned === false) {
-                                        console.log("🔥 HANDLER_CALL:", event.messageID, event.body);
                                         handlerAction(event);
                                 }
                                 else
