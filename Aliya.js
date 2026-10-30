@@ -5,55 +5,8 @@
 
 "use strict";
 
-// ───────────── Stability layer ─────────────
-// Network hiccups are normal for a Messenger bot: log them and keep running.
-const TRANSIENT_ERR = /ECONNRESET|ETIMEDOUT|ESOCKETTIMEDOUT|ENOTFOUND|EAI_AGAIN|ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|EPIPE|socket hang up|network/i;
-const recentFatal = [];
-
 process.on('unhandledRejection', error => console.error("[UNHANDLED_REJECTION]", error));
-process.on('uncaughtException', error => {
-	console.error("[UNCAUGHT_EXCEPTION]", error);
-	const text = `${error && error.code || ""} ${error && error.message || error}`;
-	if (TRANSIENT_ERR.test(text)) return;
-
-	// Previously every error was swallowed forever, which can leave the bot "alive but dead".
-	// If non-network errors keep piling up, exit so the launcher gives a clean restart.
-	const t = Date.now();
-	recentFatal.push(t);
-	while (recentFatal.length && t - recentFatal[0] > 60000) recentFatal.shift();
-	if (recentFatal.length >= 3) {
-		console.error("[STABILITY] 3 uncaught errors in 60s. Exiting for a clean restart...");
-		process.exit(1);
-	}
-});
-
-// Heartbeat -> launcher (index.js) kills & restarts us if the event loop ever freezes
-if (typeof process.send === "function") {
-	const beat = () => { try { process.send({ type: "heartbeat" }); } catch (e) { } };
-	beat();
-	setInterval(beat, 15000).unref();
-	if (process.channel && typeof process.channel.unref === "function") process.channel.unref();
-	// Launcher died -> don't keep running as an orphan holding the port
-	process.on("disconnect", () => process.exit(0));
-}
-
-// Memory guard: restart cleanly (exit 2) *before* the OS OOM-kills the process
-const MEM_LIMIT_MB = Number(process.env.MEM_LIMIT_MB) || 0;
-if (MEM_LIMIT_MB > 0) {
-	const maxRss = MEM_LIMIT_MB * 0.85 * 1048576;
-	setInterval(() => {
-		let rss = process.memoryUsage().rss;
-		if (rss < maxRss) return;
-		if (typeof global.gc === "function") {
-			try { global.gc(); } catch (e) { }
-			rss = process.memoryUsage().rss;
-		}
-		if (rss >= maxRss) {
-			console.error(`[STABILITY] Memory ${Math.round(rss / 1048576)}MB is over 85% of ${MEM_LIMIT_MB}MB. Restarting cleanly...`);
-			process.exit(2);
-		}
-	}, 30000).unref();
-}
+process.on('uncaughtException', error => console.error("[UNCAUGHT_EXCEPTION]", error));
 
 // Many groups = many listeners/events at once. Raise limit so Node doesn't spam warnings.
 require("events").EventEmitter.defaultMaxListeners = 100;
@@ -193,7 +146,7 @@ global.temp = {
 // Hot Reloading Setup
 const watchAndReloadConfig = (dir, type, prop, logName) => {
 	let lastModified = fs.statSync(dir).mtimeMs;
-	const watcher = fs.watch(dir, (eventType) => {
+	fs.watch(dir, (eventType) => {
 		if (eventType === type) {
 			setTimeout(() => {
 				try {
@@ -209,8 +162,6 @@ const watchAndReloadConfig = (dir, type, prop, logName) => {
 			}, 200);
 		}
 	});
-	// Unhandled watcher errors (EMFILE/ENOSPC...) used to take the whole bot down
-	watcher.on("error", err => log.warn(logName, `Config watcher error: ${err.message}`));
 };
 
 watchAndReloadConfig(dirConfigCommands, 'change', 'configCommands', 'CONFIG COMMANDS');
@@ -227,11 +178,10 @@ if (config.autoRestart) {
 	const time = config.autoRestart.time;
 	if (!isNaN(time) && time > 0) {
 		utils.log.info("AUTO RESTART", getText("Goat", "autoRestart1", utils.convertTime(time, true)));
-		// setTimeout overflows above 2^31-1 ms (~24.8 days) and fires instantly -> endless restart loop
 		setTimeout(() => {
 			utils.log.info("AUTO RESTART", "Restarting system...");
 			process.exit(2);
-		}, Math.min(time, 2147483647));
+		}, time);
 	} else if (typeof time == "string" && time.match(/^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})$/gmi)) {
 		utils.log.info("AUTO RESTART", getText("Goat", "autoRestart2", time));
 		const cron = require("node-cron");
@@ -241,15 +191,6 @@ if (config.autoRestart) {
 		});
 	}
 }
-
-// A hung network call at startup (Gmail/Drive) must never block the bot from logging in
-const withTimeout = (promise, ms, name) => new Promise((resolve, reject) => {
-	const timer = setTimeout(() => reject(new Error(`${name} timed out after ${ms / 1000}s`)), ms);
-	Promise.resolve(promise).then(
-		v => { clearTimeout(timer); resolve(v); },
-		e => { clearTimeout(timer); reject(e); }
-	);
-});
 
 // Async Main Bootstrapper
 (async () => {
@@ -262,7 +203,7 @@ const withTimeout = (promise, ms, name) => new Promise((resolve, reject) => {
 			const OAuth2_client = new OAuth2(clientId, clientSecret);
 			OAuth2_client.setCredentials({ refresh_token: refreshToken });
 			
-			const accessToken = await withTimeout(OAuth2_client.getAccessToken(), 15000, "Gmail getAccessToken");
+			const accessToken = await OAuth2_client.getAccessToken();
 			const transporter = nodemailer.createTransport({
 				host: 'smtp.gmail.com',
 				service: 'Gmail',
@@ -288,7 +229,7 @@ const withTimeout = (promise, ms, name) => new Promise((resolve, reject) => {
 	// 2. Google Drive Setup
 	try {
 		if (utils.drive && typeof utils.drive.checkAndCreateParentFolder === "function") {
-			utils.drive.parentID = await withTimeout(utils.drive.checkAndCreateParentFolder("AliyaBot"), 15000, "Google Drive init");
+			utils.drive.parentID = await utils.drive.checkAndCreateParentFolder("AliyaBot");
 		}
 	} catch (err) {
 		log.warn("GDRIVE_INIT", "Google Drive bypass: " + err.message);
@@ -296,15 +237,6 @@ const withTimeout = (promise, ms, name) => new Promise((resolve, reject) => {
 
 	// 3. Trigger Core Login
 	console.log("\x1b[35m\x1b[1m👑 ALIYA V4\x1b[0m \x1b[90m|\x1b[0m \x1b[36mStarting login...\x1b[0m \x1b[90m|\x1b[0m \x1b[32mMulti-group mode ON\x1b[0m");
-	try {
-		require(`./bot/login/login.js`);
-	} catch (err) {
-		// Before: this rejection was swallowed and the process sat there idle ("bot off").
-		console.error("[LOGIN_FATAL]", err);
-		process.exit(1);
-	}
-})().catch(err => {
-	console.error("[BOOT_FATAL]", err);
-	process.exit(1);
-});
+	require(`./bot/login/login.js`);
+})();
 	
