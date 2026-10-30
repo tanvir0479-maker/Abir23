@@ -50,26 +50,6 @@ const { callbackListenTime, storage5Message } = global.GoatBot;
 const { log, logColor, getPrefix, createOraDots, jsonStringifyColor, getText, convertTime, colors, randomString } = global.utils;
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// ───────── Stability helpers ─────────
-// Exit codes understood by index.js:  0 = intentional stop | 2 = planned restart | 3 = login/auth failed (retry later, slowly)
-const EXIT_AUTH_FAILED = 3;
-
-// Remote checks (GitHub raw, worldtimeapi...) must NEVER take the bot down when the network hiccups.
-async function fetchRemote(url, fallback) {
-	try {
-		return (await axios.get(url, { timeout: 15000 })).data;
-	}
-	catch (err) {
-		log.warn("REMOTE", `Can't reach ${url} (${err.code || err.message}). Skipping this check.`);
-		return fallback;
-	}
-}
-async function getUtcNow() {
-	const data = await fetchRemote("http://worldtimeapi.org/api/timezone/UTC", null);
-	const t = data && data.utc_datetime ? new Date(data.utc_datetime).getTime() : NaN;
-	return isNaN(t) ? Date.now() : t;
-}
-
 const currentVersion = require(`${process.cwd()}/package.json`).version;
 
 function centerText(text, length) {
@@ -275,7 +255,7 @@ async function getAppStateFromEmail(spin = { _start: () => { }, _stop: () => { }
 					if (message && isExit) {
 						spin._stop();
 						log.error("LOGIN FACEBOOK", message);
-						process.exit(EXIT_AUTH_FAILED);
+						process.exit();
 					}
 
 					if (message) {
@@ -421,10 +401,7 @@ async function getAppStateToLogin(loginWithEmail) {
 	if (loginWithEmail)
 		return await getAppStateFromEmail(undefined, facebookAccount);
 	if (!existsSync(dirAccount))
-	{
-			log.error("LOGIN FACEBOOK", getText('login', 'notFoundDirAccount', colors.green(dirAccount)));
-			process.exit(EXIT_AUTH_FAILED);
-		}
+		return log.error("LOGIN FACEBOOK", getText('login', 'notFoundDirAccount', colors.green(dirAccount)));
 	const accountText = readFileSync(dirAccount, "utf8");
 
 	try {
@@ -621,7 +598,7 @@ async function getAppStateToLogin(loginWithEmail) {
 		catch (err) {
 			spin._stop();
 			log.err("LOGIN FACEBOOK", getText('login', 'loginError'), err.message, err);
-			process.exit(EXIT_AUTH_FAILED);
+			process.exit();
 		}
 	}
 	return appState;
@@ -649,7 +626,7 @@ function stopListening(keyListen) {
 async function startBot(loginWithEmail) {
 	console.log(colors.hex("#f5ab00")(createLine("START LOGGING IN", true)));
 	const currentVersion = require("../../package.json").version;
-	const tooOldVersion = String(await fetchRemote("https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2-Storage/main/tooOldVersions.txt", "0.0.0") || "0.0.0").trim();
+	const tooOldVersion = (await axios.get("https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2-Storage/main/tooOldVersions.txt")).data || "0.0.0";
 	// nếu version cũ hơn
 	if ([-1, 0].includes(compareVersion(currentVersion, tooOldVersion))) {
 		log.err("VERSION", getText('version', 'tooOldVersion', colors.yellowBright('node update')));
@@ -729,12 +706,10 @@ async function startBot(loginWithEmail) {
 					catch (err) {
 						log.err("DASHBOARD", getText('login', 'openDashboardError'), err);
 					}
-					// Before: process stayed alive with a dead bot forever. Now retry login after 5 min via launcher.
-					setTimeout(() => process.exit(EXIT_AUTH_FAILED), 5 * 60 * 1000);
 					return;
 				}
 				else {
-					process.exit(EXIT_AUTH_FAILED);
+					process.exit();
 				}
 			}
 
@@ -755,8 +730,8 @@ async function startBot(loginWithEmail) {
 
 			try {
 				// convert to promise
-				dataGban = await fetchRemote("https://raw.githubusercontent.com/Savage-Army/gban/refs/heads/main/gban.json", {});
-				if (!dataGban || typeof dataGban !== "object") dataGban = {};
+				const item = await axios.get("https://raw.githubusercontent.com/Savage-Army/gban/refs/heads/main/gban.json");
+				dataGban = item.data;
 
 				// ————————————————— CHECK BOT ————————————————— //
 				const botID = api.getCurrentUserID();
@@ -766,7 +741,7 @@ async function startBot(loginWithEmail) {
 						hasBanned = true;
 					}
 					else {
-						const currentDate = await getUtcNow();
+						const currentDate = (new Date((await axios.get("http://worldtimeapi.org/api/timezone/UTC")).data.utc_datetime)).getTime();
 						if (currentDate < (new Date(dataGban[botID].date)).getTime()) {
 							log.err('GBAN', getText('login', 'gbanMessage', dataGban[botID].date, dataGban[botID].reason, dataGban[botID].date, dataGban[botID].toDate));
 							hasBanned = true;
@@ -781,7 +756,7 @@ async function startBot(loginWithEmail) {
 							hasBanned = true;
 						}
 						else {
-							const currentDate = await getUtcNow();
+							const currentDate = (new Date((await axios.get("http://worldtimeapi.org/api/timezone/UTC")).data.utc_datetime)).getTime();
 							if (currentDate < (new Date(dataGban[idad].date)).getTime()) {
 								log.err('GBAN', getText('login', 'gbanMessage', dataGban[idad].date, dataGban[idad].reason, dataGban[idad].date, dataGban[idad].toDate));
 								hasBanned = true;
@@ -793,18 +768,19 @@ async function startBot(loginWithEmail) {
 					process.exit();
 			}
 			catch (e) {
-				// Was process.exit() => exit code 0 => launcher shut the whole server down on any hiccup
 				console.log(e);
-				log.warn('GBAN', getText('login', 'checkGbanError'));
+				log.err('GBAN', getText('login', 'checkGbanError'));
+				process.exit();
 			}
 			// ———————————————— NOTIFICATIONS ———————————————— //
 			let notification;
 			try {
-				notification = await fetchRemote("https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2-Gban/master/notification.txt", "");
+				const getNoti = await axios.get("https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2-Gban/master/notification.txt");
+				notification = getNoti.data;
 			}
 			catch (err) {
-				log.warn("ERROR", "Can't get notifications data");
-				notification = "";
+				log.err("ERROR", "Can't get notifications data");
+				process.exit();
 			}
 			if (global.GoatBot.config.autoRefreshFbstate == true) {
 				changeFbStateByCode = true;
@@ -969,7 +945,7 @@ async function startBot(loginWithEmail) {
 							if (intervalCheckLiveCookieAndRelogin == false) {
 								intervalCheckLiveCookieAndRelogin = true;
 								const interval = setInterval(async () => {
-									const cookieIsLive = await checkLiveCookie(cookieString, facebookAccount.userAgent).catch(() => false);
+									const cookieIsLive = await checkLiveCookie(cookieString, facebookAccount.userAgent);
 									if (cookieIsLive) {
 										clearInterval(interval);
 										clearInterval(countTimes);
@@ -1113,7 +1089,7 @@ async function startBot(loginWithEmail) {
 				const express = require('express');
 				const app = express();
 				const server = http.createServer(app);
-				const html = await fetchRemote("https://raw.githubusercontent.com/ntkhang03/resources-goat-bot/master/homepage/home.html", "<h1>Aliya Bot is running</h1>");
+				const { data: html } = await axios.get("https://raw.githubusercontent.com/ntkhang03/resources-goat-bot/master/homepage/home.html");
 				const PORT = global.GoatBot.config.dashBoard?.port || (!isNaN(global.GoatBot.config.serverUptime.port) && global.GoatBot.config.serverUptime.port) || 3001;
 				app.get('/', (req, res) => res.send(html));
 				app.get('/uptime', global.responseUptimeCurrent);
@@ -1183,7 +1159,4 @@ async function startBot(loginWithEmail) {
 }
 
 global.GoatBot.reLoginBot = startBot;
-startBot().catch(err => {
-	console.error("[LOGIN_FATAL]", err);
-	process.exit(1); // crash path: launcher retries with backoff instead of sitting idle or shutting down
-});
+startBot();
