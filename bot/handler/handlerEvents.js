@@ -125,8 +125,21 @@ function getRoleConfig(utils, command, isGroup, threadData, commandName) {
 	return roleConfig;
 }
 
+// Group approval. When config.threadApproval.enable is true the bot only works in the groups listed in
+// threadApproval.approvedThreadIDs. Bot admins / developers can still use it anywhere (to run a "tid"
+// command in a new group, etc). Private chats are not affected. Missing key = feature off.
+function isThreadBlocked(isGroup, threadID, senderID) {
+	const cfg = global.GoatBot.config.threadApproval;
+	if (!cfg || cfg.enable !== true || !isGroup) return false;
+	if ((cfg.approvedThreadIDs || []).map(String).includes(String(threadID))) return false;
+	const { adminBot = [], developer = [] } = global.GoatBot.config;
+	if (senderID && [...adminBot, ...developer].map(String).includes(String(senderID))) return false;
+	return true;
+}
+
 function isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, commandName, message, lang) {
 	const config = global.GoatBot.config;
+	if (isThreadBlocked(isGroup, threadID, senderID)) return true; // silent: unapproved group
 	const { adminBot, hideNotiMessage, developerOnly, vipOnly } = config; 
     const role = getRole(threadData, senderID); 
 
@@ -461,6 +474,7 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 		}
 
 		async function onAnyEvent() {
+			if (isThreadBlocked(isGroup, threadID, senderID)) return;
 			const allOnAnyEvent = GoatBot.onAnyEvent || [];
 			let args = [];
 			if (typeof event.body == "string" && event.body.startsWith(prefix))
@@ -613,6 +627,7 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 			}
 		}
 		async function handlerEvent() {
+			if (isThreadBlocked(isGroup, threadID, senderID)) return;
 			const { author } = event;
 			const allEventCommand = GoatBot.eventCommands.entries();
 			for (const [key] of allEventCommand) {
@@ -638,6 +653,7 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 		}
 
 		async function onEvent() {
+			if (isThreadBlocked(isGroup, threadID, senderID)) return;
 			const allOnEvent = GoatBot.onEvent || [];
 			const args = [];
 			const { author } = event;
