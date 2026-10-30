@@ -66,21 +66,18 @@
     ]
   },
   {
-    "version": "4.0.3",
-    "files": {
-      "scripts/cmds/boxlist.js": "Added active GC list and leave thread command",
-      "scripts/cmds/sing.js": "Added fast song audio downloader command",
-      "scripts/cmds/yt.js": "Added YouTube search and media downloader with autodl engine",
-      "scripts/cmds/welcome.js": "Added aesthetic welcome event handler",
-      "scripts/cmds/amv.js": "Added anime AMV video stream command with autodl fallback",
-      "scripts/cmds/time.js": "Added neon time card fetcher command",
-      "scripts/cmds/tag.js": "Added user mention and custom messaging command by reply",
-      "scripts/cmds/fork.js": "Added fork repository info command",
-      "scripts/cmds/lyrics.js": "Added song lyrics fetcher command",
-      "scripts/cmds/update.js": "Updated update runner for V4 release"
-    },
-    "contributors": [
-      "Mr.king"
-    ]
+  "version": "4.0.3",
+  "files": {
+    "index.js": "Launcher stability: heartbeat freeze detection, RAM-aware heap, crash backoff, restart-loop guard",
+    "Aliya.js": "Stability layer: memory guard, startup timeouts, fatal-error handling, autoRestart overflow fix",
+    "package.json": "Sync dependencies with lockfile, remove built-in module shims",
+    "package-lock.json": "Regenerated root metadata to match package.json",
+    "scripts/cmds/boxlist.js": "Fix syntax error and leave-group handling",
+    "scripts/cmds/fork.js": "Fix syntax error in message template",
+    "scripts/cmds/yt.js": "Fix reply handler, add timeouts and size limit",
+    "scripts/cmds/sing.js": "Add timeouts, size limit and cleanup",
+    "scripts/cmds/lyrics.js": "Add timeouts and error diagnostics",
+    "scripts/cmds/amv.js": "added downloader"
+  },
+  "contributors": ["Mr.king"]
   }
-]
