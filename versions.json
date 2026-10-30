@@ -64,5 +64,23 @@
     "contributors": [
       "Mr.king"
     ]
+  },
+  {
+    "version": "4.0.3",
+    "files": {
+      "scripts/cmds/boxlist.js": "Added active GC list and leave thread command",
+      "scripts/cmds/sing.js": "Added fast song audio downloader command",
+      "scripts/cmds/yt.js": "Added YouTube search and media downloader with autodl engine",
+      "scripts/cmds/welcome.js": "Added aesthetic welcome event handler",
+      "scripts/cmds/amv.js": "Added anime AMV video stream command with autodl fallback",
+      "scripts/cmds/time.js": "Added neon time card fetcher command",
+      "scripts/cmds/tag.js": "Added user mention and custom messaging command by reply",
+      "scripts/cmds/fork.js": "Added fork repository info command",
+      "scripts/cmds/lyrics.js": "Added song lyrics fetcher command",
+      "scripts/cmds/update.js": "Updated update runner for V4 release"
+    },
+    "contributors": [
+      "Mr.king"
+    ]
   }
 ]
